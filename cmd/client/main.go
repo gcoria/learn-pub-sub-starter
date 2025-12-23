@@ -5,11 +5,20 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func main() {
 	fmt.Println("Starting Peril client...")
+	username, err := gamelogic.ClientWelcome()
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		return
+	}
+
+	_ = username
+
 	connectionUrl := "amqp://guest:guest@localhost:5672/"
 	conn, err := amqp.Dial(connectionUrl)
 	if err != nil {
