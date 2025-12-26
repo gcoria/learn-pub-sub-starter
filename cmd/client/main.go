@@ -6,6 +6,8 @@ import (
 	"os/signal"
 
 	"github.com/bootdotdev/learn-pub-sub-starter/internal/gamelogic"
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/pubsub"
+	"github.com/bootdotdev/learn-pub-sub-starter/internal/routing"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -17,8 +19,6 @@ func main() {
 		return
 	}
 
-	_ = username
-
 	connectionUrl := "amqp://guest:guest@localhost:5672/"
 	conn, err := amqp.Dial(connectionUrl)
 	if err != nil {
@@ -27,14 +27,21 @@ func main() {
 	}
 	defer conn.Close()
 
-	ch, err := conn.Channel()
+	queueName := fmt.Sprintf("%s.%s", routing.PauseKey, username)
+
+	_, _, err = pubsub.DeclareAndBind(
+		conn,
+		routing.ExchangePerilDirect,
+		queueName,
+		routing.PauseKey,
+		pubsub.SimpleQueueTypeTransient,
+	)
 	if err != nil {
-		fmt.Printf("Failed to open a channel: %v", err)
+		fmt.Printf("Failed to declare and bind queue: %v", err)
 		return
 	}
-	defer ch.Close()
 
-	fmt.Println("Connected to RabbitMQ")
+	fmt.Printf("Queue bound: %s\n", queueName)
 
 	// Wait for a signal (e.g. Ctrl+C) to exit the program.
 	c := make(chan os.Signal, 1)
